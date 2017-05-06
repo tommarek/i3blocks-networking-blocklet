@@ -106,7 +106,7 @@ def get_iface_bandwith(iface_name):
     rx_Bps = rx_delta / float(time_delta)
     tx_Bps = tx_delta / float(time_delta)
 
-    return (rx_Bps, tx_Bps)
+    return (rx_Bps, tx_Bps, rx, tx)
 
 def get_wireless_info(iface):
     if not os.path.isdir('/sys/class/net/%s/wireless' % iface):
@@ -130,26 +130,27 @@ def get_wireless_info(iface):
 
 
 def _get_iface_string(iface):
+    # iface name
+    out = ' <span foreground="%s"><b>%s</b></span>' % (iface['operstate'][1], iface['iface'])
+    
+    # wlan info
     if iface['wireless']:
-        return ' <span foreground="%s"><b>%s</b></span>(<span foreground="%s"><b>%s</b></span>, <span foreground="%s"><b>%d%%</b></span>): %s (%skB/%skB)' % (
-            iface['operstate'][1],
-            iface['iface'],
-            iface['operstate'][1],
-            iface['wireless'][0],
-            iface['wireless'][2],
-            iface['wireless'][1],
-            iface['ip'],
-            int(iface['bandwith'][0]/1000),
-            int(iface['bandwith'][1]/1000),
-        )
-    else:
-        return ' <span foreground="%s"><b>%s</b></span>: %s (%skB/%skB)' % (
-            iface['operstate'][1],
-            iface['iface'],
-            iface['ip'],
-            int(iface['bandwith'][0]/1000),
-            int(iface['bandwith'][1]/1000),
-        )
+        out += ' <span foreground="%s">(<b>%s</b>,</span> <span foreground="%s"><b>%d%%</b></span><span foreground="%s">)</span>' % (
+                iface['operstate'][1], iface['wireless'][0], iface['wireless'][2], iface['wireless'][1], iface['operstate'][1],
+            )
+    # IP
+    out += ' %s' % iface['ip']
+
+    # Bandwith/total
+    out += ' ['
+    out += '%skBs' % int(iface['bandwith'][0]/1000)
+    out += '(%0.2fGB)' % (int(iface['bandwith'][2]) / float('1e9'))
+    out += '/'
+    out += '%skBs' % int(iface['bandwith'][1]/1000)
+    out += '(%0.2fGB)' % (int(iface['bandwith'][3]) / float('1e9'))
+    out += ']'
+
+    return out
 
 def print_out(to_print):
     # print the physical interfaces
