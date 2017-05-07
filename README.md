@@ -11,12 +11,11 @@ Python 3 and fontawesome
 Download the `networking.py` file and add
 ```
 [networking]
-command=path_to_networking.py
+command=path/to/networking.py [--hide-totals] [--hide-physical] [--hide-logical]
 interval=5
 markup=pango
 ```
-into `i3blocks.conf`
+into `i3blocks.conf`.
 
-# TODO
-[] SSID
-[] Wirelelss signal
+For more information run `networking.py -h`.
+

@@ -17,6 +17,9 @@ import struct
 import sys
 import time
 
+from argparse import ArgumentParser
+
+
 colours = {
     'green': '#00FF00',
     'orange': '#FF8000',
@@ -129,7 +132,7 @@ def get_wireless_info(iface):
     return ssid, signal, colour
 
 
-def _get_iface_string(iface):
+def _get_iface_string(iface, args):
     # iface name
     out = ' <span foreground="%s"><b>%s</b></span>' % (iface['operstate'][1], iface['iface'])
     
@@ -142,38 +145,60 @@ def _get_iface_string(iface):
     out += ' %s' % iface['ip']
 
     # Bandwith/total
-    out += ' ['
-    out += '%skBs' % int(iface['bandwith'][0]/1000)
-    out += '(%0.2fGB)' % (int(iface['bandwith'][2]) / float('1e9'))
-    out += '/'
-    out += '%skBs' % int(iface['bandwith'][1]/1000)
-    out += '(%0.2fGB)' % (int(iface['bandwith'][3]) / float('1e9'))
-    out += ']'
+    # Down
+    out += ' ('
+    out += '<span font="FontAwesome">\uf063</span>%skBs' % int(iface['bandwith'][0]/1000)
+    if not args.hide_totals:
+        out += '[%0.2fGB]' % (int(iface['bandwith'][2]) / float('1e9'))
+    # Up
+    out += ' <span font="FontAwesome">\uf062</span>%skBs' % int(iface['bandwith'][1]/1000)
+    if not args.hide_totals:
+        out += '[%0.2fGB]' % (int(iface['bandwith'][3]) / float('1e9'))
+    out += ')'
 
     return out
 
-def print_out(to_print):
+def print_out(to_print, args):
     # print the physical interfaces
-    final_string = '<span font="FontAwesome">\uf0ac</span>'
-    if to_print['phy']:
-        for iface in sorted(to_print['phy']):
-            final_string += _get_iface_string(to_print['ifaces'][iface])
-    else:
-        final_string += ' None'
+    if not args.hide_physical:
+        final_string = '<span font="FontAwesome">\uf0ac</span>'
+        if to_print['phy']:
+            for iface in sorted(to_print['phy']):
+                final_string += _get_iface_string(to_print['ifaces'][iface], args)
+        else:
+            final_string += ' None'
 
     # then print all the logical interfaces (VPNs) excluding loopback
-    final_string += ' <span font="FontAwesome">\uf023</span>'
-    if len(to_print['log']) > 1:
-        for iface in sorted(to_print['log']):
-            # http://lxr.linux.no/#linux+v3.0/include/linux/if_arp.h
-            if to_print['ifaces'][iface]['iface_type'] != 772:
-                final_string += _get_iface_string(to_print['ifaces'][iface])
-    else:
-        final_string += ' None'
+    if not args.hide_logical:
+        final_string += ' <span font="FontAwesome">\uf023</span>'
+        if len(to_print['log']) > 1:
+            for iface in sorted(to_print['log']):
+                # http://lxr.linux.no/#linux+v3.0/include/linux/if_arp.h
+                if to_print['ifaces'][iface]['iface_type'] != 772:
+                    final_string += _get_iface_string(to_print['ifaces'][iface], args)
+        else:
+            final_string += ' None'
 
     return final_string
 
-def main():
+
+def parse_commandline_arguments(args=None):
+    parser = ArgumentParser(prog='networking', description='Networking  i3blocks booklet')
+
+    parser.add_argument('--hide-totals', action='store_true', help='hide total data downloaded')
+    parser.add_argument('--hide-physical', action='store_true', help='hide physical interfaces')
+    parser.add_argument('--hide-logical', action='store_true', help='hide logical interfaces')
+
+    if args:
+        parsed_args = parser.parse_args(args)
+    else:
+        parsed_args = parser.parse_args()
+
+    return parsed_args, parser
+
+def main(args=None):
+    args, parser = parse_commandline_arguments(args)
+
     to_print = {'phy': [], 'log': [], 'def':None, 'ifaces':{}}
     default_route = get_default_route()
 
@@ -193,7 +218,8 @@ def main():
             'wireless': get_wireless_info(iface),
         }
 
-    print(print_out(to_print))
+    print(print_out(to_print, args))
 
 
-main()
+if '__main__' == __name__:
+    main()
