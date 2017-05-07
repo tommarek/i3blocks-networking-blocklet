@@ -1,6 +1,8 @@
 # i3blocks-networking-blocklet
 i3blocks networking blocklet that scans for active interfaces in the system and displays them.
 
+![](networking.png)
+
 It scans for both logical and physical interfaces and prints them out in a pango
 format (`markup=pango` needs to be set in i3blocks config
 
